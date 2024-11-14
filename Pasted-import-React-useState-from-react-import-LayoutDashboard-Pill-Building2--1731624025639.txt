@@ -1,0 +1,132 @@
+import React, { useState } from 'react';
+import { 
+  LayoutDashboard, 
+  Pill, 
+  Building2, 
+  Users, 
+  Settings, 
+  Bell,
+  Package,
+  AlertTriangle,
+  TrendingUp
+} from 'lucide-react';
+
+const AdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  const sidebarItems = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'medicines', icon: Pill, label: 'Medicines' },
+    { id: 'pharmacies', icon: Building2, label: 'Pharmacies' },
+    { id: 'inventory', icon: Package, label: 'Inventory' },
+    { id: 'users', icon: Users, label: 'Users' },
+    { id: 'settings', icon: Settings, label: 'Settings' }
+  ];
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
+      <div className="w-64 bg-white shadow-md">
+        <div className="p-4">
+          <h1 className="text-xl font-bold text-blue-600">WIMM Admin</h1>
+        </div>
+        <nav className="mt-4">
+          {sidebarItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 ${
+                activeTab === item.id ? 'bg-blue-50 text-blue-600' : ''
+              }`}
+            >
+              <item.icon className="h-5 w-5 mr-3" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        {/* Top Bar */}
+        <div className="bg-white shadow-sm">
+          <div className="px-6 py-4 flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Dashboard Overview</h2>
+            <div className="flex items-center space-x-4">
+              <button className="p-2 hover:bg-gray-100 rounded-full">
+                <Bell className="h-5 w-5" />
+              </button>
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                  A
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dashboard Content */}
+        <div className="p-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            {[
+              { label: 'Total Medicines', value: '2,345', icon: Pill, color: 'blue' },
+              { label: 'Active Pharmacies', value: '128', icon: Building2, color: 'green' },
+              { label: 'Low Stock Alerts', value: '15', icon: AlertTriangle, color: 'red' },
+              { label: 'Total Sales', value: '$12,345', icon: TrendingUp, color: 'purple' }
+            ].map((stat, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-sm p-6">
+                <div className={`text-${stat.color}-600 mb-2`}>
+                  <stat.icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-gray-500 text-sm">{stat.label}</h3>
+                <p className="text-2xl font-semibold mt-1">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Recent Activities & Inventory Alerts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Recent Activities */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold mb-4">Recent Activities</h3>
+              <div className="space-y-4">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="flex items-start space-x-3 border-b pb-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Package className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm">Inventory updated for Pharmacy #{item}</p>
+                      <p className="text-xs text-gray-500">2 hours ago</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Inventory Alerts */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold mb-4">Low Stock Alerts</h3>
+              <div className="space-y-4">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="flex items-start space-x-3 border-b pb-3">
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm">Medicine #{item} is running low</p>
+                      <p className="text-xs text-gray-500">5 units remaining</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;
