@@ -28,6 +28,7 @@ const UserForm = ({ user, onSubmit, onClose }: any) => {
   const [formData, setFormData] = useState(user || {
     username: '',
     password: '',
+    phone: '',
     role: 'staff',
     status: 'active'
   });
@@ -55,6 +56,13 @@ const UserForm = ({ user, onSubmit, onClose }: any) => {
           required
         />
       )}
+      <Input
+        placeholder="Phone Number"
+        type="tel"
+        value={formData.phone}
+        onChange={e => setFormData({ ...formData, phone: e.target.value })}
+        required
+      />
       <select
         className="w-full p-2 border rounded"
         value={formData.role}
@@ -177,6 +185,7 @@ const Users = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Username</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Created At</TableHead>
@@ -188,6 +197,7 @@ const Users = () => {
               {filteredUsers?.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>{user.username}</TableCell>
+                  <TableCell>{user.phone}</TableCell>
                   <TableCell>
                     <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                       {user.role}

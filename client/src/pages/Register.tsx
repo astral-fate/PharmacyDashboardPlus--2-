@@ -47,6 +47,14 @@ const Register = () => {
               required
             />
           </div>
+          <div>
+            <Input
+              {...register("phone")}
+              placeholder="Phone Number"
+              type="tel"
+              required
+            />
+          </div>
           <Button type="submit" className="w-full">
             Register
           </Button>

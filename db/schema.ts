@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   username: text("username").unique().notNull(),
   password: text("password").notNull(),
+  phone: text("phone"),
   role: text("role").notNull().default("staff"),
   status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow(),
