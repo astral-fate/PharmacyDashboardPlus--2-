@@ -50,10 +50,8 @@ const Login = () => {
             Login
           </Button>
           <div className="text-center mt-4">
-            <Link href="/register">
-              <a className="text-sm text-blue-600 hover:text-blue-800">
-                Don't have an account? Register
-              </a>
+            <Link href="/register" className="text-sm text-blue-600 hover:text-blue-800">
+              Don't have an account? Register
             </Link>
           </div>
         </form>

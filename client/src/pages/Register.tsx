@@ -51,10 +51,8 @@ const Register = () => {
             Register
           </Button>
           <div className="text-center mt-4">
-            <Link href="/login">
-              <a className="text-sm text-blue-600 hover:text-blue-800">
-                Already have an account? Login
-              </a>
+            <Link href="/login" className="text-sm text-blue-600 hover:text-blue-800">
+              Already have an account? Login
             </Link>
           </div>
         </form>
