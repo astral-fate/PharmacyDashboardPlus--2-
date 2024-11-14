@@ -21,16 +21,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import type { Medicine, MedicineCategory } from 'db/schema';
+import type { MedicineCategory } from 'db/schema';
 
-const MedicineForm = ({ medicine, onSubmit, onClose }: any) => {
-  const { data: categories } = useSWR<MedicineCategory[]>('/api/medicine-categories');
-  const [formData, setFormData] = useState(medicine || {
+const CategoryForm = ({ category, onSubmit, onClose }: any) => {
+  const [formData, setFormData] = useState(category || {
     name: '',
-    categoryId: '',
     description: '',
-    price: '',
-    manufacturer: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -42,69 +38,38 @@ const MedicineForm = ({ medicine, onSubmit, onClose }: any) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <Input
-        placeholder="Medicine Name"
+        placeholder="Category Name"
         value={formData.name}
         onChange={e => setFormData({ ...formData, name: e.target.value })}
         required
       />
-      <select
-        className="w-full p-2 border rounded"
-        value={formData.categoryId}
-        onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
-        required
-      >
-        <option value="">Select Category</option>
-        {categories?.map(category => (
-          <option key={category.id} value={category.id}>
-            {category.name}
-          </option>
-        ))}
-      </select>
       <Input
         placeholder="Description"
         value={formData.description}
         onChange={e => setFormData({ ...formData, description: e.target.value })}
       />
-      <Input
-        placeholder="Price"
-        type="number"
-        step="0.01"
-        value={formData.price}
-        onChange={e => setFormData({ ...formData, price: e.target.value })}
-        required
-      />
-      <Input
-        placeholder="Manufacturer"
-        value={formData.manufacturer}
-        onChange={e => setFormData({ ...formData, manufacturer: e.target.value })}
-      />
       <Button type="submit">
-        {medicine ? 'Update Medicine' : 'Add Medicine'}
+        {category ? 'Update Category' : 'Add Category'}
       </Button>
     </form>
   );
 };
 
-const Medicines = () => {
-  const { data: medicines, mutate } = useSWR<Medicine[]>('/api/medicines');
-  const { data: categories } = useSWR<MedicineCategory[]>('/api/medicine-categories');
+const Categories = () => {
+  const { data: categories, mutate } = useSWR<MedicineCategory[]>('/api/medicine-categories');
   const [search, setSearch] = useState('');
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<MedicineCategory | null>(null);
 
-  const getCategoryName = (categoryId: number) => {
-    return categories?.find(c => c.id === categoryId)?.name || 'Uncategorized';
-  };
-
-  const filteredMedicines = medicines?.filter(medicine =>
-    medicine.name.toLowerCase().includes(search.toLowerCase())
+  const filteredCategories = categories?.filter(category =>
+    category.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSubmit = async (data: any) => {
     try {
-      const response = await fetch('/api/medicines', {
-        method: selectedMedicine ? 'PUT' : 'POST',
+      const response = await fetch('/api/medicine-categories', {
+        method: selectedCategory ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
@@ -112,37 +77,37 @@ const Medicines = () => {
       if (response.ok) {
         mutate();
         toast({
-          title: `Medicine ${selectedMedicine ? 'updated' : 'added'} successfully`,
+          title: `Category ${selectedCategory ? 'updated' : 'added'} successfully`,
         });
       }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save medicine",
+        description: "Failed to save category",
       });
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this medicine?')) return;
+    if (!confirm('Are you sure you want to delete this category?')) return;
 
     try {
-      const response = await fetch(`/api/medicines/${id}`, {
+      const response = await fetch(`/api/medicine-categories/${id}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
         mutate();
         toast({
-          title: "Medicine deleted successfully",
+          title: "Category deleted successfully",
         });
       }
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete medicine",
+        description: "Failed to delete category",
       });
     }
   };
@@ -157,7 +122,7 @@ const Medicines = () => {
             <div className="flex items-center space-x-2">
               <Search className="w-5 h-5 text-gray-500" />
               <Input
-                placeholder="Search medicines..."
+                placeholder="Search categories..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-64"
@@ -165,19 +130,19 @@ const Medicines = () => {
             </div>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => setSelectedMedicine(null)}>
+                <Button onClick={() => setSelectedCategory(null)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Medicine
+                  Add Category
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>
-                    {selectedMedicine ? 'Edit Medicine' : 'Add New Medicine'}
+                    {selectedCategory ? 'Edit Category' : 'Add New Category'}
                   </DialogTitle>
                 </DialogHeader>
-                <MedicineForm
-                  medicine={selectedMedicine}
+                <CategoryForm
+                  category={selectedCategory}
                   onSubmit={handleSubmit}
                   onClose={() => setDialogOpen(false)}
                 />
@@ -189,26 +154,26 @@ const Medicines = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Manufacturer</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Created At</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredMedicines?.map((medicine) => (
-                <TableRow key={medicine.id}>
-                  <TableCell>{medicine.name}</TableCell>
-                  <TableCell>{getCategoryName(medicine.categoryId)}</TableCell>
-                  <TableCell>${Number(medicine.price).toFixed(2)}</TableCell>
-                  <TableCell>{medicine.manufacturer}</TableCell>
+              {filteredCategories?.map((category) => (
+                <TableRow key={category.id}>
+                  <TableCell>{category.name}</TableCell>
+                  <TableCell>{category.description}</TableCell>
+                  <TableCell>
+                    {new Date(category.createdAt).toLocaleDateString()}
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setSelectedMedicine(medicine);
+                          setSelectedCategory(category);
                           setDialogOpen(true);
                         }}
                       >
@@ -217,7 +182,7 @@ const Medicines = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(medicine.id)}
+                        onClick={() => handleDelete(category.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -233,4 +198,4 @@ const Medicines = () => {
   );
 };
 
-export default Medicines;
+export default Categories;

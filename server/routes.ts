@@ -1,7 +1,15 @@
 import { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "db";
-import { medicines, pharmacies, inventory, users } from "db/schema";
+import { 
+  medicines, 
+  pharmacies, 
+  inventory, 
+  users, 
+  locations, 
+  medicineCategories, 
+  customerSupport 
+} from "db/schema";
 import { eq } from "drizzle-orm";
 
 export function registerRoutes(app: Express) {
@@ -10,7 +18,10 @@ export function registerRoutes(app: Express) {
   // Medicines endpoints
   app.get("/api/medicines", async (req, res) => {
     try {
-      const allMedicines = await db.select().from(medicines);
+      const allMedicines = await db
+        .select()
+        .from(medicines)
+        .leftJoin(medicineCategories, eq(medicines.categoryId, medicineCategories.id));
       res.json(allMedicines);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch medicines" });
@@ -26,10 +37,51 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Medicine Categories endpoints
+  app.get("/api/medicine-categories", async (req, res) => {
+    try {
+      const allCategories = await db.select().from(medicineCategories);
+      res.json(allCategories);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch medicine categories" });
+    }
+  });
+
+  app.post("/api/medicine-categories", async (req, res) => {
+    try {
+      const [newCategory] = await db.insert(medicineCategories).values(req.body).returning();
+      res.json(newCategory);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create medicine category" });
+    }
+  });
+
+  // Locations endpoints
+  app.get("/api/locations", async (req, res) => {
+    try {
+      const allLocations = await db.select().from(locations);
+      res.json(allLocations);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch locations" });
+    }
+  });
+
+  app.post("/api/locations", async (req, res) => {
+    try {
+      const [newLocation] = await db.insert(locations).values(req.body).returning();
+      res.json(newLocation);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create location" });
+    }
+  });
+
   // Pharmacies endpoints
   app.get("/api/pharmacies", async (req, res) => {
     try {
-      const allPharmacies = await db.select().from(pharmacies);
+      const allPharmacies = await db
+        .select()
+        .from(pharmacies)
+        .leftJoin(locations, eq(pharmacies.locationId, locations.id));
       res.json(allPharmacies);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch pharmacies" });
@@ -45,10 +97,36 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Customer Support endpoints
+  app.get("/api/customer-support", async (req, res) => {
+    try {
+      const allTickets = await db
+        .select()
+        .from(customerSupport)
+        .leftJoin(users, eq(customerSupport.userId, users.id));
+      res.json(allTickets);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch support tickets" });
+    }
+  });
+
+  app.post("/api/customer-support", async (req, res) => {
+    try {
+      const [newTicket] = await db.insert(customerSupport).values(req.body).returning();
+      res.json(newTicket);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create support ticket" });
+    }
+  });
+
   // Inventory endpoints
   app.get("/api/inventory", async (req, res) => {
     try {
-      const allInventory = await db.select().from(inventory);
+      const allInventory = await db
+        .select()
+        .from(inventory)
+        .leftJoin(medicines, eq(inventory.medicineId, medicines.id))
+        .leftJoin(pharmacies, eq(inventory.pharmacyId, pharmacies.id));
       res.json(allInventory);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch inventory" });

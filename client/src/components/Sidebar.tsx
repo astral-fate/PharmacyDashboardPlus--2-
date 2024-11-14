@@ -6,12 +6,14 @@ import {
   Building2, 
   Users, 
   Settings,
-  Package
+  Package,
+  FolderTree
 } from 'lucide-react';
 
 const sidebarItems = [
   { id: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { id: '/medicines', icon: Pill, label: 'Medicines' },
+  { id: '/categories', icon: FolderTree, label: 'Categories' },
   { id: '/pharmacies', icon: Building2, label: 'Pharmacies' },
   { id: '/inventory', icon: Package, label: 'Inventory' },
   { id: '/users', icon: Users, label: 'Users' },

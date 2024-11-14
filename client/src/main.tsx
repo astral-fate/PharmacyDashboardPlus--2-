@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Medicines from "./pages/Medicines";
+import Categories from "./pages/Categories";
 import Pharmacies from "./pages/Pharmacies";
 import Inventory from "./pages/Inventory";
 import Users from "./pages/Users";
@@ -21,6 +22,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
         <Route path="/medicines" component={Medicines} />
+        <Route path="/categories" component={Categories} />
         <Route path="/pharmacies" component={Pharmacies} />
         <Route path="/inventory" component={Inventory} />
         <Route path="/users" component={Users} />

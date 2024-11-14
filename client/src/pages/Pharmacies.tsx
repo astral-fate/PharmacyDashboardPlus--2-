@@ -22,12 +22,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import type { Pharmacy } from 'db/schema';
+import type { Pharmacy, Location } from 'db/schema';
 
 const PharmacyForm = ({ pharmacy, onSubmit, onClose }: any) => {
+  const { data: locations } = useSWR<Location[]>('/api/locations');
   const [formData, setFormData] = useState(pharmacy || {
     name: '',
-    address: '',
+    locationId: '',
     phone: '',
     email: '',
     status: 'active'
@@ -47,12 +48,19 @@ const PharmacyForm = ({ pharmacy, onSubmit, onClose }: any) => {
         onChange={e => setFormData({ ...formData, name: e.target.value })}
         required
       />
-      <Input
-        placeholder="Address"
-        value={formData.address}
-        onChange={e => setFormData({ ...formData, address: e.target.value })}
+      <select
+        className="w-full p-2 border rounded"
+        value={formData.locationId}
+        onChange={e => setFormData({ ...formData, locationId: e.target.value })}
         required
-      />
+      >
+        <option value="">Select Location</option>
+        {locations?.map(location => (
+          <option key={location.id} value={location.id}>
+            {location.address}, {location.city}
+          </option>
+        ))}
+      </select>
       <Input
         placeholder="Phone"
         value={formData.phone}
@@ -82,10 +90,16 @@ const PharmacyForm = ({ pharmacy, onSubmit, onClose }: any) => {
 
 const Pharmacies = () => {
   const { data: pharmacies, mutate } = useSWR<Pharmacy[]>('/api/pharmacies');
+  const { data: locations } = useSWR<Location[]>('/api/locations');
   const [search, setSearch] = useState('');
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState<Pharmacy | null>(null);
+
+  const getLocationAddress = (locationId: number) => {
+    const location = locations?.find(l => l.id === locationId);
+    return location ? `${location.address}, ${location.city}` : 'Unknown Location';
+  };
 
   const filteredPharmacies = pharmacies?.filter(pharmacy =>
     pharmacy.name.toLowerCase().includes(search.toLowerCase())
@@ -179,7 +193,7 @@ const Pharmacies = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Address</TableHead>
+                <TableHead>Location</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Status</TableHead>
@@ -190,7 +204,7 @@ const Pharmacies = () => {
               {filteredPharmacies?.map((pharmacy) => (
                 <TableRow key={pharmacy.id}>
                   <TableCell>{pharmacy.name}</TableCell>
-                  <TableCell>{pharmacy.address}</TableCell>
+                  <TableCell>{getLocationAddress(pharmacy.locationId)}</TableCell>
                   <TableCell>{pharmacy.phone}</TableCell>
                   <TableCell>{pharmacy.email}</TableCell>
                   <TableCell>
