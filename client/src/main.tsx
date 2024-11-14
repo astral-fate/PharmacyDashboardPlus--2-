@@ -7,6 +7,7 @@ import { fetcher } from "./lib/fetcher";
 import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Medicines from "./pages/Medicines";
 import Pharmacies from "./pages/Pharmacies";
 import Inventory from "./pages/Inventory";
@@ -18,6 +19,7 @@ createRoot(document.getElementById("root")!).render(
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
         <Route path="/medicines" component={Medicines} />
         <Route path="/pharmacies" component={Pharmacies} />
         <Route path="/inventory" component={Inventory} />
