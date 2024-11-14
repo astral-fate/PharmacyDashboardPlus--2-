@@ -28,15 +28,15 @@ const Sidebar = () => {
       </div>
       <nav className="mt-4">
         {sidebarItems.map((item) => (
-          <Link key={item.id} href={item.id}>
-            <a
-              className={`w-full flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 ${
-                location === item.id ? 'bg-blue-50 text-blue-600' : ''
-              }`}
-            >
-              <item.icon className="h-5 w-5 mr-3" />
-              {item.label}
-            </a>
+          <Link
+            key={item.id}
+            href={item.id}
+            className={`w-full flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 ${
+              location === item.id ? 'bg-blue-50 text-blue-600' : ''
+            }`}
+          >
+            <item.icon className="h-5 w-5 mr-3" />
+            {item.label}
           </Link>
         ))}
       </nav>
