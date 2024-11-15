@@ -1,12 +1,12 @@
 import passport from "passport";
 import { IVerifyOptions, Strategy as LocalStrategy } from "passport-local";
-import { type Express } from "express";
+import { type Express, Request } from "express";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { users, insertUserSchema, type User as SelectUser } from "db/schema";
-import { db } from "db";
+import { users, insertUserSchema } from "../db/schema.js";
+import { db } from "../db/index.js";
 import { eq } from "drizzle-orm";
 
 const scryptAsync = promisify(scrypt);
@@ -28,30 +28,48 @@ const crypto = {
   },
 };
 
-// extend express user object with our schema
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends Omit<import("../db/schema.js").User, "password"> {}
   }
+}
+
+// Track login attempts
+interface LoginAttempt {
+  count: number;
+  lastAttempt: number;
+}
+
+const loginAttempts = new Map<string, LoginAttempt>();
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
+
+function getClientIp(req: Request): string {
+  return (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || 
+         req.socket.remoteAddress || 
+         'unknown';
 }
 
 export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
+  const isProduction = app.get("env") === "production";
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID || "porygon-supremacy",
     resave: false,
     saveUninitialized: false,
-    cookie: {},
     store: new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
     }),
+    cookie: {
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
   };
 
-  if (app.get("env") === "production") {
+  if (isProduction) {
     app.set("trust proxy", 1);
-    sessionSettings.cookie = {
-      secure: true,
-    };
   }
 
   app.use(session(sessionSettings));
@@ -109,7 +127,6 @@ export function setupAuth(app: Express) {
 
       const { username, password } = result.data;
 
-      // Check if user already exists
       const [existingUser] = await db
         .select()
         .from(users)
@@ -120,10 +137,7 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Username already exists" });
       }
 
-      // Hash the password
       const hashedPassword = await crypto.hash(password);
-
-      // Create the new user
       const [newUser] = await db
         .insert(users)
         .values({
@@ -132,7 +146,6 @@ export function setupAuth(app: Express) {
         })
         .returning();
 
-      // Log the user in after registration
       req.login(newUser, (err) => {
         if (err) {
           return next(err);
@@ -148,6 +161,23 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/login", (req, res, next) => {
+    const ip = getClientIp(req);
+    const attempts = loginAttempts.get(ip) || { count: 0, lastAttempt: 0 };
+    const now = Date.now();
+
+    // Check if user is locked out
+    if (attempts.count >= MAX_ATTEMPTS && now - attempts.lastAttempt < LOCKOUT_TIME) {
+      return res.status(429).json({
+        message: "Too many login attempts. Please try again later.",
+        retryAfter: Math.ceil((LOCKOUT_TIME - (now - attempts.lastAttempt)) / 1000)
+      });
+    }
+
+    // Reset attempts if lockout period has passed
+    if (now - attempts.lastAttempt >= LOCKOUT_TIME) {
+      attempts.count = 0;
+    }
+
     const result = insertUserSchema.safeParse(req.body);
     if (!result.success) {
       return res
@@ -155,15 +185,25 @@ export function setupAuth(app: Express) {
         .json({ message: "Invalid input", errors: result.error.flatten() });
     }
 
-    const cb = (err: any, user: Express.User, info: IVerifyOptions) => {
+    passport.authenticate("local", (err: any, user: Express.User, info: IVerifyOptions) => {
       if (err) {
         return next(err);
       }
       if (!user) {
+        // Increment failed attempts
+        attempts.count++;
+        attempts.lastAttempt = now;
+        loginAttempts.set(ip, attempts);
+
         return res.status(400).json({
           message: info.message ?? "Login failed",
+          attemptsRemaining: MAX_ATTEMPTS - attempts.count
         });
       }
+
+      // Reset attempts on successful login
+      loginAttempts.delete(ip);
+
       req.logIn(user, (err) => {
         if (err) {
           return next(err);
@@ -173,22 +213,28 @@ export function setupAuth(app: Express) {
           user: { id: user.id, username: user.username },
         });
       });
-    };
-    passport.authenticate("local", cb)(req, res, next);
+    })(req, res, next);
   });
 
   app.post("/logout", (req, res) => {
+    const username = req.user?.username;
     req.logout((err) => {
       if (err) {
         return res.status(500).json({ message: "Logout failed" });
       }
-      res.json({ message: "Logout successful" });
+      res.json({ message: "Logout successful", username });
     });
   });
 
   app.get("/api/user", (req, res) => {
     if (req.isAuthenticated()) {
-      return res.json(req.user);
+      const user = req.user;
+      return res.json({
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        status: user.status
+      });
     }
     res.status(401).json({ message: "Unauthorized" });
   });
